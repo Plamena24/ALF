@@ -41,7 +41,6 @@ const int CHASE_LENGTH = 218;
 const int END_LIGHT_INDEX = CHASE_LENGTH-1;
 const int EFFECT_COUNT = 25;
 
-bool reading = false;
 
 struct {
   unsigned long nextRefreshMs = 0;
@@ -80,7 +79,7 @@ void loop() {
   {
     // for debug
     //S.isActive = ((currentTimeMs / 1000) % 2);
-    reading = digitalRead(4);
+    S.isActive = digitalRead(4);
 
     checkTip(currentTimeMs);
     updateTipLights(currentTimeMs);
@@ -91,20 +90,15 @@ void loop() {
 }
 
 void checkTip(unsigned long t) {
-  if (reading != S.isAlreadyActive){
-    S.nextDebounceMs = t + DEBOUNCE_INTERVAL_MS;
-  }
   if (t > S.nextDebounceMs) {
-    if (reading != S.isAlreadyActive) 
+    if (S.isActive & !S.isAlreadyActive) 
     {
-      S.isActive = reading;
-      
-      if (S.isActive) {
-         startChase();   
+         startChase(); 
+         S.isAlreadyActive = true;  
       }
     }
     
-    //S.nextDebounceMs += DEBOUNCE_INTERVAL_MS;
+    S.nextDebounceMs += DEBOUNCE_INTERVAL_MS;
   }
 }
 
