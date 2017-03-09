@@ -15,6 +15,9 @@
 // Here's how to control the LEDs from any two pins:
 #define DATAPIN    11
 #define CLOCKPIN   13
+#define IN_WATER 0
+#define NOT_IN_WATER 1
+
 Adafruit_DotStar strip = Adafruit_DotStar(
   NUMPIXELS, DATAPIN, CLOCKPIN, DOTSTAR_BGR);
 // The last parameter is optional -- this is the color data order of the
@@ -35,18 +38,15 @@ typedef enum {
 const uint32_t COLOR_BG = strip.Color(0,100,50);
 const uint32_t COLOR_CHASE = strip.Color(150, 150, 150);
 const uint32_t COLOR_TIP = strip.Color(225,225, 225);
-const int REFRESH_INTERVAL_MS = 20;
-const int DEBOUNCE_INTERVAL_MS = 100;
+//const int REFRESH_INTERVAL_MS = 10;
 const int CHASE_LENGTH = 218;
 const int END_LIGHT_INDEX = CHASE_LENGTH-1;
-const int EFFECT_COUNT = 25;
-
+const int EFFECT_COUNT = 30;
+uint8_t tip_status = NOT_IN_WATER;
 
 struct {
   unsigned long nextRefreshMs = 0;
-  unsigned long nextDebounceMs = 0;
   bool isActive = false;
-  bool isAlreadyActive = false;
 } S; // State
 
 struct t_effect{
@@ -59,8 +59,8 @@ t_effect activeEffects[EFFECT_COUNT] = {};
 void setup() {
   pinMode(4, INPUT); // touch input
   
-  S.nextRefreshMs = millis();
-  S.nextDebounceMs = millis();
+ // S.nextRefreshMs = millis();
+  tip_status = NOT_IN_WATER;
   strip.begin(); // Initialize pins for output
   strip.show();  // Turn all LEDs off ASAP
 
@@ -75,30 +75,43 @@ void setup() {
 
 void loop() {
   unsigned long currentTimeMs = millis();
-  if (currentTimeMs > S.nextRefreshMs) 
-  {
+ // if (currentTimeMs > S.nextRefreshMs) 
+ // {
     // for debug
     //S.isActive = ((currentTimeMs / 1000) % 2);
     S.isActive = digitalRead(4);
 
-    checkTip(currentTimeMs);
+    debounceSensorRead(S.isActive);
     updateTipLights(currentTimeMs);
     updateChaseLights();
     strip.show();                     // Refresh strip
-    S.nextRefreshMs += REFRESH_INTERVAL_MS;
-  }
+ //   S.nextRefreshMs += REFRESH_INTERVAL_MS;
+ // }
 }
 
-void checkTip(unsigned long t) {
-  if (t > S.nextDebounceMs) {
-    if (S.isActive & !S.isAlreadyActive) 
-    {
-         startChase(); 
-         S.isAlreadyActive = true;  
+void debounceSensorRead(bool inWater) {
+  switch(tip_status)
+  {
+    case IN_WATER:
+      if (inWater) {
+        tip_status = IN_WATER;  
+      } 
+      else {
+        tip_status = NOT_IN_WATER;
       }
-    }
-    
-    S.nextDebounceMs += DEBOUNCE_INTERVAL_MS;
+      break;
+    case NOT_IN_WATER:
+      if(inWater) {
+        startChase();
+        tip_status = IN_WATER;
+      }
+      else 
+      {
+        tip_status = NOT_IN_WATER;
+      }
+      break;
+    default:
+      break;
   }
 }
 
