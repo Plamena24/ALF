@@ -31,7 +31,7 @@ void loop()
     Serial.print("\t");                    // tab character for debug windown spacing
 
     Serial.println(total1);                  // print sensor output 1
-    if (total1 > 100) {
+    if (total1 > 60) {
       digitalWrite(4,HIGH);
       Serial.println(digitalRead(4));
     } else {
